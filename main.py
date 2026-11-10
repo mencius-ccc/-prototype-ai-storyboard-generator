@@ -15,7 +15,7 @@ st.subheader("Autonomous Multi-Agent Workflow (Powered by HKUST GenAI)")
 try:
     HKUST_API_KEY = st.secrets["HKUST_API_KEY"]
 except Exception:
-    HKUST_API_KEY = "PASTE_YOUR_PRIMARY_OR_SECONDARY_KEY_HERE"
+    HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"
 
 # Initialize standard OpenAI client configured for HKUST GenAI Gateway
 client = OpenAI(
