@@ -113,46 +113,46 @@ if start_pipeline:
         st.divider()
 
         # ==========================================
-        # PHASE 3: Image Producer Bot 1 (Gemini Model per Shot)
+        # PHASE 3: Image Producer Bot 1 (Using gemini-2.5-flash-image)
         # ==========================================
-        st.subheader("Phase 3: Image Producer Bot 1 (Character & Background Integrity via Gemini)")
-        st.markdown(f"*Using **Gemini Model** via HKUST GenAI to generate dedicated visual specs ($I_1, I_2, I_3$) directly for each shot under **{genre}**.*")
-
+        st.subheader("Phase 3: Image Producer Bot 1 (Character & Background Integrity)")
+        st.markdown(f"*Synthesizing actual keyframe images ($I_1, I_2, I_3$) using **gemini-2.5-flash-image** under **{genre}**.*")
+        
         col1, col2, col3 = st.columns(3)
         columns = [col1, col2, col3]
-        shot_labels = ["Shot 1: Hook Anchor ($I_1$)", "Shot 2: Escalation Anchor ($I_2$)", "Shot 3: Climax Anchor ($I_3$)"]
+        shot_names = ["Shot 1: The Hook ($I_1$)", "Shot 2: Escalation ($I_2$)", "Shot 3: Climax ($I_3$)"]
 
         for idx in range(3):
             with columns[idx]:
-                st.markdown(f"### {shot_labels[idx]}")
-                with st.spinner(f"Generating Shot {idx+1} visual spec via Gemini..."):
+                st.markdown(f"### {shot_names[idx]}")
+                
+                with st.spinner(f"Generating Keyframe I{idx+1} via gemini-2.5-flash-image..."):
                     try:
-                        shot_prompt = (
-                            f"Based on this storyboard blueprint:\n{storyboard_output}\n\n"
-                            f"Provide the exact visual art direction, lighting, color palette, camera setup, and composition specification "
-                            f"for Shot {idx+1} only, ensuring strict style adherence to '{genre}'."
+                        img_prompt = (
+                            f"Cinematic keyframe shot {idx+1} matching the aesthetic archetype: {genre}. "
+                            f"Platform format: {target_platform}. Core narrative element: {user_script[:150]}. "
+                            f"High production design, strict character consistency and visual details."
                         )
                         
-                        # 使用 Gemini 模型為每個鏡頭產出專屬的生成成果
-                        gemini_response = client.chat.completions.create(
-                            model="gemini-2.5-flash-image",  # 可依據您的 HKUST 帳號權限改為 gemini-1.5-flash
-                            messages=[
-                                {"role": "system", "content": "You are an expert AI visual artist and concept designer."},
-                                {"role": "user", "content": shot_prompt}
-                            ]
+                        # 使用 gemini-2.5-flash-image 進行圖像生成
+                        img_response = client.images.generate(
+                            model="gemini-2.5-flash-image",
+                            prompt=img_prompt,
+                            size="1024x1024",
+                            n=1,
                         )
-                        shot_content = gemini_response.choices[0].message.content
-                        st.success(f"✨ Gemini Spec $I_{idx+1}$ Active")
-                        st.write(shot_content)
+                        img_url = img_response.data[0].url
+                        st.image(img_url, caption=f"Keyframe Anchor I{idx+1}")
+                        
                     except Exception as e:
-                        st.error(f"Gemini generation error: {e}")
+                        st.error(f"Image generation error: {e}")
 
-        st.success("✅ Phase 3 Complete: Anchor Keyframes ($I_1, I_2, I_3$) successfully generated and displayed via Gemini model.")
+        st.success("✅ Phase 3 Complete: Anchor Keyframes ($I_1, I_2, I_3$) successfully generated.")
 
         st.divider()
 
         # ==========================================
-        # PHASE 4: Image/Video Producer Bot 2 (3 Video Interpolations)
+        # PHASE 4: Image/Video Producer Bot 2 (3 Video Tracks)
         # ==========================================
         st.subheader("Phase 4: Image/Video Producer Bot 2 (Resource-Efficient Frame Interpolation)")
         st.markdown("*Bridging Keyframe-to-Keyframe transitions and final output generation across 3 synchronized video tracks.*")
@@ -177,6 +177,6 @@ if start_pipeline:
             st.video("https://www.w3schools.com/html/mov_bbb.mp4")
             st.caption("Final Master Render: Ready for platform export.")
 
-        st.success("🎉 **Human-in-the-Loop Workflow Complete:** All 4 AI agent phases successfully executed using Gemini and HKUST GenAI!")
+        st.success("🎉 **Human-in-the-Loop Workflow Complete:** All 4 AI agent phases successfully executed!")
 else:
     st.info("👈 Select your parameters in the sidebar, then click **Execute Multi-Agent Pipeline**.")
