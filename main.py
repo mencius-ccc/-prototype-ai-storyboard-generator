@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import requests
+import base64
 from openai import OpenAI
 
 st.set_page_config(
@@ -125,17 +126,15 @@ if start_pipeline:
         columns = [col1, col2, col3]
         shot_names = ["Shot 1: The Hook ($I_1$)", "Shot 2: Escalation ($I_2$)", "Shot 3: Climax ($I_3$)"]
 
-        # 針對每個分鏡呼叫 /images/generations 端點
         for idx in range(3):
             with columns[idx]:
                 st.markdown(f"### {shot_names[idx]}")
                 
                 with st.spinner(f"Generating Shot {idx+1} image via gemini-2.5-flash-image..."):
                     try:
-                        # 依據您提供的 OpenAPI 規格構建 JSON Body
                         payload = {
                             "model": "gemini-2.5-flash-image",
-                            "prompt": f"Storyboard shot {idx+1} for: {storyboard_output[:300]}. Visual Style: {genre}. Target Platform: {target_platform}."
+                            "prompt": f"Storyboard shot {idx+1} based on: {storyboard_output[:300]}. Visual Style: {genre}. Target Platform: {target_platform}."
                         }
                         
                         headers = {
@@ -149,21 +148,33 @@ if start_pipeline:
                         
                         if api_res.status_code == 200:
                             res_data = api_res.json()
-                            # 兼容常見的圖片回傳欄位格式 (data[0].url 或 data[0].b64_json 等)
                             if "data" in res_data and len(res_data["data"]) > 0:
                                 img_item = res_data["data"][0]
-                                img_url = img_item.get("url") or img_item.get("b64_json")
+                                
+                                # 檢查是否為網址
+                                img_url = img_item.get("url")
+                                # 檢查是否為 Base64 字串 (如 b64_json 或直接傳回 iVBOR...)
+                                b64_data = img_item.get("b64_json")
+                                
                                 if img_url:
                                     st.image(img_url, caption=f"Keyframe Anchor I{idx+1}")
+                                elif b64_data:
+                                    img_bytes = base64.b64decode(b64_data)
+                                    st.image(img_bytes, caption=f"Keyframe Anchor I{idx+1}")
                                 else:
-                                    st.success(f"✨ Shot {idx+1} generated successfully via API.")
-                                    st.json(res_data)
+                                    # 如果回傳的資料本身就是 Base64 字串 (例如開頭是 iVBOR...)
+                                    raw_str = str(img_item)
+                                    if raw_str.startswith("iVBOR") or len(raw_str) > 100:
+                                        img_bytes = base64.b64decode(raw_str)
+                                        st.image(img_bytes, caption=f"Keyframe Anchor I{idx+1}")
+                                    else:
+                                        st.success(f"✨ Shot {idx+1} generated successfully.")
+                                        st.json(res_data)
                             else:
                                 st.success(f"✨ Shot {idx+1} generated successfully.")
                                 st.json(res_data)
                         else:
                             st.warning(f"API status {api_res.status_code}: {api_res.text}")
-                            # 降級備用預覽圖，確保介面展示流暢
                             import hashlib
                             fallback_seed = int(hashlib.md5((storyboard_output + str(idx)).encode()).hexdigest(), 16) % 10000
                             st.image(f"https://picsum.photos/seed/{fallback_seed}/500/281", caption=f"Keyframe Anchor I{idx+1} (Fallback Preview)")
