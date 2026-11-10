@@ -14,7 +14,7 @@ st.subheader("Autonomous Multi-Agent Workflow (Powered by HKUST GenAI)")
 # --- HKUST GENAI DEFAULT API CONFIGURATION ---
 # You can set your HKUST API key below, or safely store it in Streamlit Secrets as "HKUST_API_KEY"
 try:
-    HKUST_API_KEY = st.secrets["HKUST_API_KEY"]
+    HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"
 except Exception:
     HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"  # Replace with your actual HKUST GenAI API key
 
