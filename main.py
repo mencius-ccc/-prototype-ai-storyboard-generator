@@ -17,7 +17,13 @@ try:
     HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"
 except Exception:
     HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"  # Replace with your actual HKUST GenAI API key
-
+client = OpenAI(
+    api_key=HKUST_API_KEY,
+    base_url="https://hkust.azure-api.net/hkust-genai/v1",
+    default_headers={
+        "Ocp-Apim-Subscription-Key": HKUST_API_KEY
+    }
+)
 # Initialize OpenAI client with HKUST GenAI base URL and default key
 client = OpenAI(
     api_key=HKUST_API_KEY,
