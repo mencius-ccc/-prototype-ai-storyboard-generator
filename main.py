@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 st.title("🎬 AI Storyboard & Micro-Proof-of-Concept Generator")
-st.subheader("Multi-Agent Workflow for Solo Writers (Dynamic Script Integration)")
+st.subheader("Multi-Agent Workflow for Solo Writers (Structured Step 2 & Step 3)")
 
 st.sidebar.header("1. Script Input & Parameters")
 
@@ -131,17 +131,24 @@ if start_pipeline:
             " ".join(words[chunk_size*2:]) if len(words) > chunk_size*2 else "The climax occurs..."
         ]
 
-        with st.status(f"🤖 Agent 1: Parsing user script into **{concept_data['title']}**...", expanded=True) as status:
+        with st.status(f"🤖 Agent 1: Orchestrating **{concept_data['title']}**...", expanded=True) as status:
             time.sleep(1.0)
             st.write("✅ Tokenized raw input script into 3 thematic beats.")
             st.write(f"✅ Blended user story content with **{genre}** under **{target_platform}** template.")
             status.update(label="Agent 1: Script Integration Complete!", state="complete")
 
-        st.subheader(f"2. Concept Adaptation: {concept_data['title']}")
-        st.markdown(f"**Visual Style & Framing:** {concept_data['style']}")
+        # --- STEP 2: Scene Adaptation & Text Descriptions ---
+        st.subheader(f"2. Concept Adaptation & Script Breakdown: {concept_data['title']}")
+        st.markdown(f"**Visual Style & Framing:** `{concept_data['style']}`")
         
+        for idx, act_text in enumerate(act_texts):
+            full_description = f"{concept_data['hooks'][idx]}\"{act_text}\""
+            st.info(f"**Act {idx+1}:** {full_description}")
+
         st.divider()
-        st.subheader("3. Integrated Storyboard & Multi-Modal Assets")
+        
+        # --- STEP 3: Multi-Modal Asset Generation ---
+        st.subheader("3. Multi-Modal Asset Generation (Image & Keyframe Video Bots)")
         
         col1, col2, col3 = st.columns(3)
         columns = [col1, col2, col3]
@@ -150,22 +157,18 @@ if start_pipeline:
 
         for idx, act_text in enumerate(act_texts):
             with columns[idx]:
-                st.markdown(f"### Act {idx+1}")
-                
-                # Combine matrix platform hook with the user's specific script text
-                full_description = f"{concept_data['hooks'][idx]}\"{act_text}\""
-                st.info(full_description)
+                st.markdown(f"### Act {idx+1} Assets")
                 
                 img_url = f"https://picsum.photos/seed/{base_seed + idx}/400/225"
-                st.image(img_url, caption=f"Keyframe {idx+1} (Seed #{base_seed + idx})")
+                st.image(img_url, caption=f"Keyframe {idx+1} Concept Art (Seed #{base_seed + idx})")
                 
                 if idx == 1:
                     st.video("https://www.w3schools.com/html/movie.mp4")
                 else:
                     st.video("https://www.w3schools.com/html/mov_bbb.mp4")
                     
-                st.caption(f"Act {idx+1} Keyframe Render Preview")
+                st.caption(f"Keyframe Video Render Preview")
 
-        st.success("✅ **Human-in-the-Loop Check:** Custom script input successfully synthesized across the 3×5 matrix!")
+        st.success("✅ **Human-in-the-Loop Check:** Descriptions and visual assets successfully generated across the matrix!")
 else:
     st.info("👈 Select your parameters, type your script in the sidebar, and click **Run Multi-Agent Pipeline**.")
