@@ -193,7 +193,7 @@ if start_pipeline:
         # PHASE 4: Image/Video Producer Bot 2 (3 Video Tracks)
         # ==========================================
         st.subheader("Phase 4: Image/Video Producer Bot 2 (Resource-Efficient Frame Interpolation)")
-        st.markdown("*Bridging Keyframe-to-Keyframe transitions and final output generation across 3 synchronized video tracks.*")
+        st.markdown("*Bridging Keyframe-to-Keyframe transitions and final output generation across 3 synchronized video tracks.*\nThis function needs money to solve.")
 
         vcol1, vcol2, vcol3 = st.columns(3)
         
