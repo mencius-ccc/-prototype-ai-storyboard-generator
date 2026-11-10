@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import requests
 from openai import OpenAI
 
 st.set_page_config(
@@ -17,10 +18,12 @@ try:
 except Exception:
     HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"
 
-# 初始化 OpenAI 相容客戶端，連接至 HKUST GenAI 閘道器
+API_BASE_URL = "https://hkust.azure-api.net/hkust-genai/v1"
+
+# 初始化 OpenAI 用於 Phase 1 & 2 的文字生成
 client = OpenAI(
     api_key=HKUST_API_KEY,
-    base_url="https://hkust.azure-api.net/hkust-genai/v1",
+    base_url=API_BASE_URL,
     default_headers={
         "api-key": HKUST_API_KEY,
         "Ocp-Apim-Subscription-Key": HKUST_API_KEY
@@ -113,46 +116,65 @@ if start_pipeline:
         st.divider()
 
         # ==========================================
-        # PHASE 3: Image Producer Bot 1 (Gemini Image Model driven by Phase 2)
+        # PHASE 3: Image Producer Bot 1 (/images/generations with gemini-2.5-flash-image)
         # ==========================================
         st.subheader("Phase 3: Image Producer Bot 1 (Character & Background Integrity)")
-        st.markdown(f"*Synthesizing actual keyframe images ($I_1, I_2, I_3$) using **gemini-2.5-flash-image** directly driven by Phase 2 storyboard results under **{genre}**.*")
+        st.markdown(f"*Calling HKUST GenAI `/images/generations` endpoint using **gemini-2.5-flash-image** driven by Phase 2 storyboard results under **{genre}**.*")
         
         col1, col2, col3 = st.columns(3)
         columns = [col1, col2, col3]
         shot_names = ["Shot 1: The Hook ($I_1$)", "Shot 2: Escalation ($I_2$)", "Shot 3: Climax ($I_3$)"]
 
+        # 針對每個分鏡呼叫 /images/generations 端點
         for idx in range(3):
             with columns[idx]:
                 st.markdown(f"### {shot_names[idx]}")
                 
-                with st.spinner(f"Generating Keyframe I{idx+1} via gemini-2.5-flash-image..."):
+                with st.spinner(f"Generating Shot {idx+1} image via gemini-2.5-flash-image..."):
                     try:
-                        # 將 Phase 2 的分鏡結果結合進生圖 prompt
-                        image_prompt = (
-                            f"Based on this Phase 2 storyboard spec:\n{storyboard_output}\n\n"
-                            f"Generate visual keyframe image {idx+1} matching aesthetic: {genre}. "
-                            f"Target platform format: {target_platform}. "
-                            f"Maintain strict consistency, high-end production design, and accurate details."
-                        )
+                        # 依據您提供的 OpenAPI 規格構建 JSON Body
+                        payload = {
+                            "model": "gemini-2.5-flash-image",
+                            "prompt": f"Storyboard shot {idx+1} for: {storyboard_output[:300]}. Visual Style: {genre}. Target Platform: {target_platform}."
+                        }
                         
-                        img_response = client.images.generate(
-                            model="gemini-2.5-flash-image",
-                            prompt=image_prompt,
-                            size="1024x1024",
-                            n=1,
-                        )
-                        img_url = img_response.data[0].url
-                        st.image(img_url, caption=f"Keyframe Anchor I{idx+1}")
+                        headers = {
+                            "Content-Type": "application/json",
+                            "api-key": HKUST_API_KEY,
+                            "Ocp-Apim-Subscription-Key": HKUST_API_KEY
+                        }
                         
+                        img_api_url = f"{API_BASE_URL}/images/generations"
+                        api_res = requests.post(img_api_url, json=payload, headers=headers, timeout=60)
+                        
+                        if api_res.status_code == 200:
+                            res_data = api_res.json()
+                            # 兼容常見的圖片回傳欄位格式 (data[0].url 或 data[0].b64_json 等)
+                            if "data" in res_data and len(res_data["data"]) > 0:
+                                img_item = res_data["data"][0]
+                                img_url = img_item.get("url") or img_item.get("b64_json")
+                                if img_url:
+                                    st.image(img_url, caption=f"Keyframe Anchor I{idx+1}")
+                                else:
+                                    st.success(f"✨ Shot {idx+1} generated successfully via API.")
+                                    st.json(res_data)
+                            else:
+                                st.success(f"✨ Shot {idx+1} generated successfully.")
+                                st.json(res_data)
+                        else:
+                            st.warning(f"API status {api_res.status_code}: {api_res.text}")
+                            # 降級備用預覽圖，確保介面展示流暢
+                            import hashlib
+                            fallback_seed = int(hashlib.md5((storyboard_output + str(idx)).encode()).hexdigest(), 16) % 10000
+                            st.image(f"https://picsum.photos/seed/{fallback_seed}/500/281", caption=f"Keyframe Anchor I{idx+1} (Fallback Preview)")
+                            
                     except Exception as e:
-                        st.warning(f"Note: Image generation endpoint returned 502/error ({e}). Displaying stylized visual reference derived from Phase 2 prompt.")
-                        # 降級備用顯示，確保頁面順暢
+                        st.error(f"Image generation error: {e}")
                         import hashlib
                         fallback_seed = int(hashlib.md5((storyboard_output + str(idx)).encode()).hexdigest(), 16) % 10000
                         st.image(f"https://picsum.photos/seed/{fallback_seed}/500/281", caption=f"Keyframe Anchor I{idx+1} (Fallback Preview)")
 
-        st.success("✅ Phase 3 Complete: Anchor Keyframes ($I_1, I_2, I_3$) processed.")
+        st.success("✅ Phase 3 Complete: Anchor Keyframes ($I_1, I_2, I_3$) processed via endpoint.")
 
         st.divider()
 
