@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-import hashlib
+import os
 
 st.set_page_config(
     page_title="AI Storyboard Generator",
@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 st.title("🎬 AI Storyboard & Micro-Proof-of-Concept Generator")
-st.subheader("Multi-Agent Workflow for Solo Writers (Structured Step 2 & Step 3)")
+st.subheader("Multi-Agent Workflow with Custom User Visual Assets")
 
 st.sidebar.header("1. Script Input & Parameters")
 
@@ -37,7 +37,6 @@ user_script = st.sidebar.text_area(
 
 start_pipeline = st.sidebar.button("🚀 Run Multi-Agent Pipeline")
 
-# Preset framework database for all 15 combinations
 MATRIX_DATA = {
     ("🚀 Sci-Fi / Space", "TikTok / Shorts (Fast-Paced Hook)"): {
         "title": "The Dark Edge of the Orbit",
@@ -122,7 +121,6 @@ if start_pipeline:
     else:
         concept_data = MATRIX_DATA.get((genre, target_platform))
         
-        # Split user's script into 3 dynamic narrative chunks
         words = user_script.strip().split()
         chunk_size = max(1, len(words) // 3)
         act_texts = [
@@ -147,20 +145,23 @@ if start_pipeline:
 
         st.divider()
         
-        # --- STEP 3: Multi-Modal Asset Generation ---
-        st.subheader("3. Multi-Modal Asset Generation (Image & Keyframe Video Bots)")
+        # --- STEP 3: Multi-Modal Asset Generation (Custom Images) ---
+        st.subheader("3. Multi-Modal Asset Generation (Custom Visual Assets)")
         
         col1, col2, col3 = st.columns(3)
         columns = [col1, col2, col3]
         
-        base_seed = int(hashlib.md5((user_script + genre + target_platform).encode()).hexdigest(), 16) % 10000
+        image_files = ["act1.jpg", "act2.jpg", "act3.jpg"]
 
         for idx, act_text in enumerate(act_texts):
             with columns[idx]:
                 st.markdown(f"### Act {idx+1} Assets")
                 
-                img_url = f"https://picsum.photos/seed/{base_seed + idx}/400/225"
-                st.image(img_url, caption=f"Keyframe {idx+1} Concept Art (Seed #{base_seed + idx})")
+                img_path = image_files[idx]
+                if os.path.exists(img_path):
+                    st.image(img_path, caption=f"Custom Asset: Act {idx+1}")
+                else:
+                    st.warning(f"Missing `{img_path}` in project folder. Please save your image as `{img_path}`.")
                 
                 if idx == 1:
                     st.video("https://www.w3schools.com/html/movie.mp4")
@@ -169,6 +170,6 @@ if start_pipeline:
                     
                 st.caption(f"Keyframe Video Render Preview")
 
-        st.success("✅ **Human-in-the-Loop Check:** Descriptions and visual assets successfully generated across the matrix!")
+        st.success("✅ **Human-in-the-Loop Check:** Descriptions and custom images successfully loaded!")
 else:
     st.info("👈 Select your parameters, type your script in the sidebar, and click **Run Multi-Agent Pipeline**.")
