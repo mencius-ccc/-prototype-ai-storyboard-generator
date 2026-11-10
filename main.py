@@ -113,55 +113,41 @@ if start_pipeline:
         st.divider()
 
         # ==========================================
-        # PHASE 3: Image Producer Bot 1 (Powered by Gemini Model via HKUST GenAI)
+        # PHASE 3: Image Producer Bot 1 (Gemini Model per Shot)
         # ==========================================
         st.subheader("Phase 3: Image Producer Bot 1 (Character & Background Integrity via Gemini)")
-        st.markdown(f"*Using **Gemini Model** via HKUST GenAI to synthesize detailed visual keyframe assets ($I_1, I_2, I_3$) and art direction for **{genre}**.*")
-
-        with st.spinner("Generating visual keyframe prompts and descriptions with Gemini..."):
-            try:
-                gemini_prompt = (
-                    f"Based on this storyboard blueprint:\n{storyboard_output}\n\n"
-                    f"Generate highly detailed visual descriptions, color grading, lighting setup, and composition details "
-                    f"for 3 keyframe anchor images ($I_1, $I_2, $I_3$) under the '{genre}' style. "
-                    f"Format your response clearly into Shot 1, Shot 2, and Shot 3 with rich descriptive details."
-                )
-                
-                # 使用 Gemini 模型（例如 gemini-1.5-pro 或 gemini-1.5-flash，請依據您的 HKUST 閘道器支援名稱調整）
-                gemini_response = client.chat.completions.create(
-                    model="gemini-1.5-pro",  # 若您的環境支援，亦可改為 gemini-1.5-flash
-                    messages=[
-                        {"role": "system", "content": "You are an expert AI visual artist and concept designer."},
-                        {"role": "user", "content": gemini_prompt}
-                    ]
-                )
-                gemini_visual_output = gemini_response.choices[0].message.content
-            except Exception as e:
-                gemini_visual_output = f"Gemini generation error: {e}"
+        st.markdown(f"*Using **Gemini Model** via HKUST GenAI to generate dedicated visual specs ($I_1, I_2, I_3$) directly for each shot under **{genre}**.*")
 
         col1, col2, col3 = st.columns(3)
+        columns = [col1, col2, col3]
         shot_labels = ["Shot 1: Hook Anchor ($I_1$)", "Shot 2: Escalation Anchor ($I_2$)", "Shot 3: Climax Anchor ($I_3$)"]
 
-        # 將 Gemini 產出的視覺成果展示在 3 個獨立的視覺化卡片中
-        with col1:
-            st.markdown(f"### {shot_labels[0]}")
-            st.success("✨ **Gemini Visual Spec $I_1$ Active**")
-            st.info("Focus: Fast-paced visual hook & initial environment setup.")
+        for idx in range(3):
+            with columns[idx]:
+                st.markdown(f"### {shot_labels[idx]}")
+                with st.spinner(f"Generating Shot {idx+1} visual spec via Gemini..."):
+                    try:
+                        shot_prompt = (
+                            f"Based on this storyboard blueprint:\n{storyboard_output}\n\n"
+                            f"Provide the exact visual art direction, lighting, color palette, camera setup, and composition specification "
+                            f"for Shot {idx+1} only, ensuring strict style adherence to '{genre}'."
+                        )
+                        
+                        # 使用 Gemini 模型為每個鏡頭產出專屬的生成成果
+                        gemini_response = client.chat.completions.create(
+                            model="gemini-2.5-flash-image",  # 可依據您的 HKUST 帳號權限改為 gemini-1.5-flash
+                            messages=[
+                                {"role": "system", "content": "You are an expert AI visual artist and concept designer."},
+                                {"role": "user", "content": shot_prompt}
+                            ]
+                        )
+                        shot_content = gemini_response.choices[0].message.content
+                        st.success(f"✨ Gemini Spec $I_{idx+1}$ Active")
+                        st.write(shot_content)
+                    except Exception as e:
+                        st.error(f"Gemini generation error: {e}")
 
-        with col2:
-            st.markdown(f"### {shot_labels[1]}")
-            st.success("✨ **Gemini Visual Spec $I_2$ Active**")
-            st.info("Focus: Conflict escalation & character state preservation.")
-
-        with col3:
-            st.markdown(f"### {shot_labels[2]}")
-            st.success("✨ **Gemini Visual Spec $I_3$ Active**")
-            st.info("Focus: Climax framing & emotional resolution.")
-
-        with st.expander("🔍 View Complete Gemini-Generated Visual Assets & Art Direction"):
-            st.markdown(gemini_visual_output)
-
-        st.success("✅ Phase 3 Complete: Anchor Keyframes ($I_1, I_2, I_3$) successfully synthesized and locked via Gemini model.")
+        st.success("✅ Phase 3 Complete: Anchor Keyframes ($I_1, I_2, I_3$) successfully generated and displayed via Gemini model.")
 
         st.divider()
 
