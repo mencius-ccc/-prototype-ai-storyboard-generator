@@ -12,22 +12,21 @@ st.title("🎬 AI Storyboard & Micro-Proof-of-Concept Generator")
 st.subheader("Autonomous Multi-Agent Workflow (Powered by HKUST GenAI)")
 
 # --- HKUST GENAI DEFAULT API CONFIGURATION ---
-# You can set your HKUST API key below, or safely store it in Streamlit Secrets as "HKUST_API_KEY"
+# Replace with your copied Primary or Secondary Key below (or set HKUST_API_KEY in Streamlit Secrets)
 try:
-    HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"
+    HKUST_API_KEY = st.secrets["HKUST_API_KEY"]
 except Exception:
-    HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"  # Replace with your actual HKUST GenAI API key
+    HKUST_API_KEY = "819e201e244c478ca6770b61cf02cc52"
+
+# Initialize standard OpenAI client for HKUST GenAI Gateway
+# Passes your key via api_key and default_headers to ensure Azure APIM authentication succeeds
 client = OpenAI(
     api_key=HKUST_API_KEY,
     base_url="https://hkust.azure-api.net/hkust-genai/v1",
     default_headers={
+        "api-key": HKUST_API_KEY,
         "Ocp-Apim-Subscription-Key": HKUST_API_KEY
     }
-)
-# Initialize OpenAI client with HKUST GenAI base URL and default key
-client = OpenAI(
-    api_key=HKUST_API_KEY,
-    base_url="https://hkust.azure-api.net/hkust-genai/v1"  # Official HKUST GenAI OpenAI-compatible endpoint
 )
 
 # Sidebar for Pipeline Configuration (No manual API key box needed)
